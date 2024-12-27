@@ -1,0 +1,46 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgresdb
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+
+  flask_app:
+    build:
+      context: ./flask_app
+    container_name: flask
+    environment:
+      FLASK_RUN_HOST: 0.0.0.0
+      DATABASE_URL: postgres://user:password@postgres:5432/mydatabase
+    depends_on:
+      - postgres
+    ports:
+      - "5000:5000"
+
+  react_frontend:
+    build:
+      context: ./react-frontend
+    container_name: react_frontend
+    ports:
+      - "8080:80"
+
+  nginx:
+    build:
+      context: ./nginx
+    container_name: nginx-container
+    depends_on:
+      - react_frontend
+      - flask_app
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
